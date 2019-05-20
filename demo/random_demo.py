@@ -2,6 +2,7 @@ import gym
 import time
 from gym.envs import registration
 from gym.utils import play
+
 # env = gym.make('CartPole-v0')
 
 game = "skiing"
@@ -18,9 +19,9 @@ registration.register(
 )
 
 
-env = gym.make('Skiing-v5')
-# env = gym.make('skiing')
-
+# env = gym.make('Skiing-v5')
+env = gym.make('Skiing-ram-v0')
+ 
 
 # def callback(obs_t, obs_tp1, action, rew, done, info):
 #     return [rew,]
@@ -32,6 +33,8 @@ env = gym.make('Skiing-v5')
 env.reset()
 i = 0
 # for _ in range(1000):
+print("Action space: {}".format(env.action_space))
+
 print("Action space: {}".format(env.get_action_meanings()))
 
 game_over = False
@@ -43,12 +46,12 @@ while not game_over:
     time.sleep(0.0001)
     i += 1
     print(
-        "ob:, reward: {reward}, game_over: {game_over}, d: {d}".format(
+        "ob: {ob}, reward: {reward}, game_over: {game_over}, d: {d}".format(
             ob=ob, reward=reward, game_over=game_over, d=d
         ))
     print("iteration {}, step_result: ".format(i))
 
 print("sum_rewards", sum(rewards))
 
-time.sleep(10)
+# time.sleep(10)
 env.close()
