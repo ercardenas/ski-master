@@ -20,7 +20,7 @@ registration.register(
 
 
 # env = gym.make('Skiing-v5')
-env = gym.make('Skiing-ram-v0')
+env = gym.make('Skiing-v0')
  
 
 # def callback(obs_t, obs_tp1, action, rew, done, info):
@@ -49,6 +49,7 @@ while not game_over:
         "ob: {ob}, reward: {reward}, game_over: {game_over}, d: {d}".format(
             ob=ob, reward=reward, game_over=game_over, d=d
         ))
+    print(len(ob))
     print("iteration {}, step_result: ".format(i))
 
 print("sum_rewards", sum(rewards))

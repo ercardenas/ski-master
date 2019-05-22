@@ -10,37 +10,69 @@ from algorithm import q_learning
 # env = gym.make('CartPole-v0')
 
 
-
-def main(argv):
-    
+def ramLearner():
     env = gym.make('Skiing-ram-v0')
     # Build learner 
     actions_func = ski_learning.get_actions_for_env(env)
     learner = q_learning.QLearningAlgorithm(actions_func,
-                                            0.9,
-                                            ski_learning.ski_ram_base_feature_extractor)
-    for i in range(10):
-        trainOnce(env, learner)
+                                            0.5,
+                                            ski_learning.ski_ram_base_feature_extractor,
+                                            0.3)
+    return env, learner
 
-        # print("Start Learned weigths")
-        # print(learner.weights)
-        # print("Finish Learned weigths")
+def imageLearner():
+    env = gym.make('Skiing-v0')
+    # Build learner 
+    actions_func = ski_learning.get_actions_for_env(env)
+    learner = q_learning.QLearningAlgorithm(actions_func,
+                                            0.5,
+                                            ski_learning.ski_image_resized_action_feature_extractor,
+                                            # ski_learning.ski_image_resized_feature_extractor,
+                                            # ski_learning.ski_image_base_feature_extractor,
+                                            0.3)
+    return env, learner
+    
+
+def main(argv):
+
+    env, learner = imageLearner()
+    
+    for i in range(10000000):
+        print("iteration: {}".format(i))
+        verbose = (i % 1) == 0
+
+        if ((i+1)%5) == 0:
+            learner.explorationProb = 0.0
+        else:
+            learner.explorationProb = 1.0
+            
         
+        trainOnce(env, learner, True)
 
-def trainOnce(env, learner):
+        
+        if True:
+            print("Start Learned weigths")
+            print(learner.weights)
+            print("Finish Learned weigths")
+    
+
+def trainOnce(env, learner, verbose):
 
     observation = env.reset()
     game_over = False
 
+    all_rewards = []
     while not game_over:
 
-        env.render()
+        if verbose:
+            env.render()
         action = learner.getAction(observation)
         
         new_observation, reward, game_over, info = env.step(action)
-        learner.incorporateFeedback(observation, action, reward, new_observation)
+        learner.incorporateFeedback(observation, action, reward, new_observation, verbose)
         observation = new_observation
 
+        all_rewards.append(reward)
         # print("Start Learned weigths Inter")
         # print(learner.weights)
         # print("Finish Learned weigths Inter")
@@ -51,7 +83,9 @@ def trainOnce(env, learner):
         #     "ob:{ob}, reward: {reward}, game_over: {game_over}, d: {d}".format(
         #         ob=observation, reward=reward, game_over=game_over, d=info
         #     ))
-        # time.sleep(0.0001)
+        if verbose:
+            time.sleep(0.0001)
+    print("sum_rewards : {}".format(sum(all_rewards)))
 
 
 if __name__ == '__main__':

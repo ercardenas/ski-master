@@ -61,7 +61,7 @@ class QLearningAlgorithm(RLAlgorithm):
     # Note that if s is a terminal state, then s' will be None.  Remember to check for this.
     # You should update the weights using self.getStepSize(); use
     # self.getQ() to compute the current estimate of the parameters.
-    def incorporateFeedback(self, state, action, reward, newState):
+    def incorporateFeedback(self, state, action, reward, newState, verbose=False):
         # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
 
         if newState is None:
@@ -70,22 +70,24 @@ class QLearningAlgorithm(RLAlgorithm):
         # Update weights to
         stepSize = self.getStepSize()
         # print('step size', stepSize)
-        VnewState = self.discount * max([self.getQ(newState, newAction) for newAction in self.actions(state)])
+        VnewState = self.discount * max([self.getQ(newState, newAction) for newAction in self.actions(newState)])
         target = reward + VnewState
-
-        print("actions", self.actions(state)) 
         
         VcurrentState = self.getQ(state, action)
         residual = VcurrentState - target 
 
-
-        print()
-        print()
-        print("VcurrentState", VcurrentState)
-        print("VnewState", VnewState)
-        print("reward", reward)
-        print("residual", residual)
+        if verbose:
+            print()
+            print()
+            print("VcurrentState", VcurrentState)
+            print("VnewState", VnewState)
+            print("reward", reward)
+            print("residual", residual)
+            print("target", target)
+            print("stepSize", stepSize)
         
         for f, v in self.featureExtractor(state, action):
-            self.weights[f] -= stepSize * (VcurrentState - target) * v
+            self.weights[f] -= (stepSize * (VcurrentState - target) * v) * 100
+            if v > 0.0:
+                print(((VcurrentState - target) * v))
         # END_YOUR_CODE
