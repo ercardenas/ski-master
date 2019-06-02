@@ -18,7 +18,8 @@ def ramLearner():
         actions=actions_func,
         discount=0.5,
         featureExtractor=ski_learning.ski_ram_base_feature_extractor,
-        explorationProb=0.3)
+        explorationProb=0.3,
+        learningRate=0.00005)
     return env, learner
 
 def imageLearner():
@@ -31,15 +32,28 @@ def imageLearner():
         featureExtractor=ski_learning.ski_image_resized_action_feature_extractor,
         # featureExtractor=ski_learning.ski_image_resized_feature_extractor,
         # featureExtractor=ski_learning.ski_image_base_feature_extractor,
-        explorationProb=0.3)
+        explorationProb=0.3,
+        learningRate=100)
     return env, learner
 
 def imageNNLearner():
-    pass
+    env = gym.make('Skiing-v0')
+    # Build learner 
+    actions_func = ski_learning.get_actions_for_env(env)
+
+    nn_model = ski_learning.ski_image_nn_model()
+    print(nn_model.summary())
+    learner = q_learning.NNQLearningAlgorithm(
+        actions=actions_func,
+        discount=0.9,
+        explorationProb=0.3,
+        model=nn_model,
+        learningRate=1)
+    return env, learner
 
 def main(argv):
 
-    env, learner = imageLearner()
+    env, learner = imageNNLearner()
     
     for i in range(10000000):
         print("iteration: {}".format(i))
@@ -48,9 +62,11 @@ def main(argv):
         # Train on a fully exploration mode, and then once on using
         # the actual learned policy
         if ((i+1)%5) == 0:
-            learner.explorationProb = 0.0
+            print("Exploit")
+            learner.explorationProb = 0.1
         else:
-            learner.explorationProb = 1.0
+            print("Explore")
+            learner.explorationProb = 0.9
             
         
         trainOnce(env, learner, True)
@@ -74,7 +90,7 @@ def trainOnce(env, learner, verbose):
         action = learner.getAction(observation)
         
         new_observation, reward, game_over, info = env.step(action)
-        learner.incorporateFeedback(observation, action, reward, new_observation, False)
+        learner.incorporateFeedback(observation, action, reward, new_observation, True)
         observation = new_observation
 
         all_rewards.append(reward)

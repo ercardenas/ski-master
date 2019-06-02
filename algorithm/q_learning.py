@@ -1,6 +1,9 @@
 import math
 import random
 import collections
+import cv2
+
+import numpy as np
 
 
 # Abstract class: an RLAlgorithm performs reinforcement learning.  All it needs
@@ -28,12 +31,13 @@ class RLAlgorithm(object):
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
 class QLearningAlgorithm(RLAlgorithm):
-    def __init__(self, actions, discount, explorationProb=0.2):
+    def __init__(self, actions, discount, explorationProb=0.2, learningRate=1.0):
         self.actions = actions
         self.discount = discount
         self.explorationProb = explorationProb
         self.weights = collections.defaultdict(float)
         self.numIters = 0
+        self.learningRate = learningRate
 
     # Return the Q function associated with the weights and features
     def getQ(self, state, action):
@@ -73,13 +77,13 @@ class QLearningAlgorithm(RLAlgorithm):
 # returns a random action
 class LinearQLearningAlgorithm(QLearningAlgorithm):
     
-    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2):
-        super(LinearQLearningAlgorithm, self).__init__(
-                                                       actions=actions,
+    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2, learningRate=1.0):
+        super(LinearQLearningAlgorithm, self).__init__(actions=actions,
                                                        discount=discount,
-                                                       explorationProb=explorationProb)
+                                                       explorationProb=explorationProb,
+                                                       learningRate=learningRate)
         self.featureExtractor = featureExtractor
-    
+        
     # Return the Q function associated with the weights and features
     def getQ(self, state, action):
         score = 0
@@ -118,7 +122,106 @@ class LinearQLearningAlgorithm(QLearningAlgorithm):
             print("stepSize", stepSize)
         
         for f, v in self.featureExtractor(state, action):
-            self.weights[f] -= (stepSize * (VcurrentState - target) * v) * 100
+            self.weights[f] -= (stepSize * (VcurrentState - target) * v) * self.learningRate
             if v > 0.0:
                 print(((VcurrentState - target) * v))
         # END_YOUR_CODE
+
+
+
+# Performs Q-learning.  Read util.RLAlgorithm for more information.
+# actions: a function that takes a state and returns a list of actions.
+# discount: a number between 0 and 1, which determines the discount factor
+# model: a function that takes a state and action and returns a list of (feature name, feature value) pairs.
+# explorationProb: the epsilon value indicating how frequently the policy
+# returns a random action
+class NNQLearningAlgorithm(QLearningAlgorithm):
+    
+    def __init__(self, actions, discount, model, explorationProb=0.2, learningRate=1.0):
+        super(NNQLearningAlgorithm, self).__init__(actions=actions,
+                                                       discount=discount,
+                                                       explorationProb=explorationProb,
+                                                       learningRate=learningRate)
+        # Model should receive as inputs state=state(w x h x c, float), action=action(1x1,int)
+        self.model = model
+    
+    # Return the Q function associated with the weights and features
+    def getQ(self, state, action):
+
+        state_array = np.array([state])
+        action_array = np.zeros((1,3))
+        action_array[0][action] = 1.0
+        
+        score = self.model.predict([state_array, action_array])
+        # print(score.shape)
+        return score[0]
+
+
+    # We will call this function with (s, a, r, s'), which you should use to update |weights|.
+    # Note that if s is a terminal state, then s' will be None.  Remember to check for this.
+    # You should update the weights using self.getStepSize(); use
+    # self.getQ() to compute the current estimate of the parameters.
+    def incorporateFeedback(self, state, action, reward, newState, verbose=False):
+        # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
+
+        if newState is None:
+            return
+        
+        # Update weights to
+        stepSize = self.getStepSize()
+        # print('step size', stepSize)
+        VnewStates = [self.getQ(newState, newAction) for newAction in self.actions(newState)]
+        VnewState = self.discount * max(VnewStates)
+        target = reward + VnewState
+        
+        VcurrentState = self.getQ(state, action)
+
+        if verbose:
+            verb_img = np.zeros((600, 1000))
+            cv2.putText(verb_img,
+                        "scores: " + str(VnewStates),
+                        (50, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 255, 255))
+            cv2.putText(verb_img,
+                        "VcurrentState: " + str(VcurrentState),
+                        (50, 80),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 255, 255))
+            cv2.putText(verb_img,
+                        "reward: " + str(reward),
+                        (50, 110),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 255, 255))
+            cv2.putText(verb_img,
+                        "target: " + str(target),
+                        (50, 140),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 255, 255))
+            cv2.imshow("debug", verb_img)
+            cv2.waitKey(1)
+            
+            # print()
+            # print()
+            # print("VcurrentState", VcurrentState)
+            # print("VnewState", VnewState)
+            # print("reward", reward)
+            # print("target", target)
+            # print("stepSize", stepSize)
+        
+
+        # To train the NN we need, (state, action), target
+        state_array = np.array([state])
+        action_array = np.zeros((1,3))
+        action_array[0][action] = 1.0
+        sample_weight_array = np.array([stepSize * self.learningRate])
+        target_array = np.array(target)
+        self.model.train_on_batch([state_array, action_array], target_array, sample_weight_array)
+        
+        # END_YOUR_CODE
+        
+        

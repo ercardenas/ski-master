@@ -1,7 +1,9 @@
 
 import numpy as np
 import cv2
-
+from keras import layers
+from keras import models
+from keras import optimizers
 
 def get_actions_for_env(env):
 
@@ -129,3 +131,26 @@ def ski_image_resized_action_feature_extractor(observation, action):
             #                  image[y][x]))
             
     return features
+
+
+
+
+def ski_image_nn_model():
+    
+    input_layer = layers.Input(shape=(250, 160, 3))
+    
+    reduced = layers.MaxPooling2D(5)(input_layer)
+    conv1 = layers.Conv2D(filters=3, kernel_size=3, strides=1, activation="relu")(reduced)
+    conv2 = layers.Conv2D(filters=5, kernel_size=5, strides=2, activation="relu")(conv1)
+    conv3 = layers.Conv2D(filters=5, kernel_size=5, strides=2, activation="relu")(conv2)
+    conv4 = layers.Conv2D(filters=10, kernel_size=(7,5), strides=1, activation="relu")(conv3)
+    flat = layers.Flatten()(conv4)
+
+    input_action = layers.Input(shape=(3,))
+    joined = layers.Concatenate()([flat, input_action])
+    output = layers.Dense(1)(joined)
+
+    m = models.Model(inputs=[input_layer, input_action], outputs=output)
+    opt = optimizers.SGD(lr=.1)
+    m.compile(optimizer=opt, loss="mean_squared_error")
+    return m
