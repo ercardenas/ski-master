@@ -8,7 +8,7 @@ import collections
 # simulate()) will call getAction() to get an action, perform the action, and
 # then provide feedback (via incorporateFeedback()) to the RL algorithm, so it can adjust
 # its parameters.
-class RLAlgorithm:
+class RLAlgorithm(object):
     # Your algorithm will be asked to produce an action given a state.
     def getAction(self, state): raise NotImplementedError("Override me")
 
@@ -28,16 +28,16 @@ class RLAlgorithm:
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
 class QLearningAlgorithm(RLAlgorithm):
-    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2):
+    def __init__(self, actions, discount, explorationProb=0.2):
         self.actions = actions
         self.discount = discount
-        self.featureExtractor = featureExtractor
         self.explorationProb = explorationProb
         self.weights = collections.defaultdict(float)
         self.numIters = 0
 
     # Return the Q function associated with the weights and features
     def getQ(self, state, action):
+        raise Exception("getQ Is Not Implemented")
         score = 0
         for f, v in self.featureExtractor(state, action):
             score += self.weights[f] * v
@@ -56,6 +56,37 @@ class QLearningAlgorithm(RLAlgorithm):
     # Call this function to get the step size to update the weights.
     def getStepSize(self):
         return 1.0 / math.sqrt(self.numIters)
+
+    # We will call this function with (s, a, r, s'), which you should use to update |weights|.
+    # Note that if s is a terminal state, then s' will be None.  Remember to check for this.
+    # You should update the weights using self.getStepSize(); use
+    # self.getQ() to compute the current estimate of the parameters.
+    def incorporateFeedback(self, state, action, reward, newState, verbose=False):
+        raise Exception("incorporateFeedback is not implemented")
+
+
+# Performs Q-learning.  Read util.RLAlgorithm for more information.
+# actions: a function that takes a state and returns a list of actions.
+# discount: a number between 0 and 1, which determines the discount factor
+# featureExtractor: a function that takes a state and action and returns a list of (feature name, feature value) pairs.
+# explorationProb: the epsilon value indicating how frequently the policy
+# returns a random action
+class LinearQLearningAlgorithm(QLearningAlgorithm):
+    
+    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2):
+        super(LinearQLearningAlgorithm, self).__init__(
+                                                       actions=actions,
+                                                       discount=discount,
+                                                       explorationProb=explorationProb)
+        self.featureExtractor = featureExtractor
+    
+    # Return the Q function associated with the weights and features
+    def getQ(self, state, action):
+        score = 0
+        for f, v in self.featureExtractor(state, action):
+            score += self.weights[f] * v
+        return score
+
 
     # We will call this function with (s, a, r, s'), which you should use to update |weights|.
     # Note that if s is a terminal state, then s' will be None.  Remember to check for this.

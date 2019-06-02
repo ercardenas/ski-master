@@ -14,24 +14,28 @@ def ramLearner():
     env = gym.make('Skiing-ram-v0')
     # Build learner 
     actions_func = ski_learning.get_actions_for_env(env)
-    learner = q_learning.QLearningAlgorithm(actions_func,
-                                            0.5,
-                                            ski_learning.ski_ram_base_feature_extractor,
-                                            0.3)
+    learner = q_learning.LinearQLearningAlgorithm(
+        actions=actions_func,
+        discount=0.5,
+        featureExtractor=ski_learning.ski_ram_base_feature_extractor,
+        explorationProb=0.3)
     return env, learner
 
 def imageLearner():
     env = gym.make('Skiing-v0')
     # Build learner 
     actions_func = ski_learning.get_actions_for_env(env)
-    learner = q_learning.QLearningAlgorithm(actions_func,
-                                            0.5,
-                                            ski_learning.ski_image_resized_action_feature_extractor,
-                                            # ski_learning.ski_image_resized_feature_extractor,
-                                            # ski_learning.ski_image_base_feature_extractor,
-                                            0.3)
+    learner = q_learning.LinearQLearningAlgorithm(
+        actions=actions_func,
+        discount=0.5,
+        featureExtractor=ski_learning.ski_image_resized_action_feature_extractor,
+        # featureExtractor=ski_learning.ski_image_resized_feature_extractor,
+        # featureExtractor=ski_learning.ski_image_base_feature_extractor,
+        explorationProb=0.3)
     return env, learner
-    
+
+def imageNNLearner():
+    pass
 
 def main(argv):
 
@@ -41,6 +45,8 @@ def main(argv):
         print("iteration: {}".format(i))
         verbose = (i % 1) == 0
 
+        # Train on a fully exploration mode, and then once on using
+        # the actual learned policy
         if ((i+1)%5) == 0:
             learner.explorationProb = 0.0
         else:
@@ -48,7 +54,6 @@ def main(argv):
             
         
         trainOnce(env, learner, True)
-
         
         if True:
             print("Start Learned weigths")
@@ -69,7 +74,7 @@ def trainOnce(env, learner, verbose):
         action = learner.getAction(observation)
         
         new_observation, reward, game_over, info = env.step(action)
-        learner.incorporateFeedback(observation, action, reward, new_observation, verbose)
+        learner.incorporateFeedback(observation, action, reward, new_observation, False)
         observation = new_observation
 
         all_rewards.append(reward)
