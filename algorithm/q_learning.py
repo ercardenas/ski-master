@@ -132,7 +132,8 @@ class LinearQLearningAlgorithm(QLearningAlgorithm):
 # Performs Q-learning.  Read util.RLAlgorithm for more information.
 # actions: a function that takes a state and returns a list of actions.
 # discount: a number between 0 and 1, which determines the discount factor
-# model: a function that takes a state and action and returns a list of (feature name, feature value) pairs.
+# model: a Keras model that takes 2 inputs: the state of the
+#        environment, and the action to take as a one hot vector.
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
 class NNQLearningAlgorithm(QLearningAlgorithm):
@@ -176,43 +177,54 @@ class NNQLearningAlgorithm(QLearningAlgorithm):
         
         VcurrentState = self.getQ(state, action)
 
+        action_array = np.zeros((1,3))
+        action_array[0][action] = 1.0
+
+        # Display debugging data on a new window.
         if verbose:
             verb_img = np.zeros((600, 1000))
+            scores_str = "{: <20}, {: <20}, {: <20}".format(VnewStates[0][0],
+                                                            VnewStates[1][0],
+                                                            VnewStates[2][0])
             cv2.putText(verb_img,
-                        "scores: " + str(VnewStates),
+                        "explore prob: " + str(self.explorationProb),
+                        (50, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 255, 255))
+            cv2.putText(verb_img,
+                        "scores: " + str(scores_str),
                         (50, 50),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,
                         (255, 255, 255))
             cv2.putText(verb_img,
-                        "VcurrentState: " + str(VcurrentState),
+                        "action: " + str(action_array),
                         (50, 80),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,
                         (255, 255, 255))
+            
             cv2.putText(verb_img,
-                        "reward: " + str(reward),
+                        "VcurrentState: " + str(VcurrentState),
                         (50, 110),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,
                         (255, 255, 255))
             cv2.putText(verb_img,
-                        "target: " + str(target),
+                        "reward: " + str(reward),
                         (50, 140),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,
                         (255, 255, 255))
+            cv2.putText(verb_img,
+                        "target: " + str(target),
+                        (50, 170),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 255, 255))
             cv2.imshow("debug", verb_img)
-            cv2.waitKey(1)
-            
-            # print()
-            # print()
-            # print("VcurrentState", VcurrentState)
-            # print("VnewState", VnewState)
-            # print("reward", reward)
-            # print("target", target)
-            # print("stepSize", stepSize)
-        
+            cv2.waitKey(1)                    
 
         # To train the NN we need, (state, action), target
         state_array = np.array([state])
