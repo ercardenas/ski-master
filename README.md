@@ -14,4 +14,23 @@ pip install gym[atari]
 
 pip install pygame
 pip install matplotlib
+
+pip install cv2
+pip install opencv-python
+```
+
+## How to run the code?
+
+After activating the evinroment, there are three different models which you can run:
+
+1. Heuristic Based Model:
+
+```
+python train_heuristic.py
+```
+
+2. Imaged Based Q-Learning:
+
+```
+python train.py
 ```
