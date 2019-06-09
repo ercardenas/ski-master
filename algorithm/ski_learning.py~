@@ -1,8 +1,0 @@
-
-
-
-def get_actions_for_env(env):
-
-    all_actions = list(range(env.action_space.n))
-    def actions_function(state):
-    
